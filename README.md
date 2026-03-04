@@ -36,26 +36,32 @@ See [`ios_native_app/README.md`](ios_native_app/README.md) for detailed setup in
 
 ### 2. Expo Go App (`mobile_app_expo/`)
 
-A cross-platform mobile app built with **React Native** and **Expo**.
+A cross-platform mobile app built with **React Native** and **Expo**. Uses a Python backend for YOLO (live bounding box) and EasyOCR (text extraction); same serial/part pattern matching as the iOS app.
 
 **Features:**
 - Cross-platform (iOS & Android)
-- Easy development with Expo Go
-- Camera integration with `expo-camera`
+- Live YOLO bounding box + static guide overlay
+- Capture & extract serial/part numbers (EasyOCR + same regex as iOS)
+- Run in Expo Go via QR code
 
 **Requirements:**
-- Node.js
-- Expo CLI
-- Expo Go app on your device
+- Node.js, Expo Go app on your device
+- Backend running (`expo_backend/`) — see below
+- Phone and computer on same Wi‑Fi
 
 **Quick Start:**
-```bash
-cd mobile_app_expo
-npm install
-npm start
-```
+1. **Terminal 1:** Start the backend and wait for "Models ready":
+   ```bash
+   cd expo_backend && source venv/bin/activate && pip install -r requirements.txt && python app.py
+   ```
+2. **Terminal 2:** Start Expo and open on device:
+   ```bash
+   cd mobile_app_expo && npm install && npx expo start
+   ```
+3. Set `BACKEND_URL` in `mobile_app_expo/App.tsx` to your computer's IP (e.g. `http://192.168.1.100:5000`).
+4. Scan the QR code with Expo Go.
 
-Scan the QR code with Expo Go to run on your device.
+See **[mobile_app_expo/README.md](mobile_app_expo/README.md)** for full setup, BACKEND_URL, and troubleshooting.
 
 ---
 
@@ -68,9 +74,14 @@ Capstone_2/
 │   └── SerialNumberScanner/     # Xcode project
 │
 ├── mobile_app_expo/             # Expo/React Native application
-│   ├── App.tsx                  # Main app component
-│   ├── package.json             # Dependencies
-│   └── assets/                  # App assets
+│   ├── README.md                # How to run with Expo Go (backend, BACKEND_URL, npx expo start)
+│   ├── App.tsx                  # Main app (camera, bbox, capture, BACKEND_URL)
+│   ├── utils/patternMatching.ts # Serial/part extraction (same as iOS)
+│   └── package.json
+├── expo_backend/                # Python backend (YOLO + EasyOCR) for Expo app
+│   ├── README.md
+│   ├── app.py
+│   └── requirements.txt
 │
 ├── best.pt                      # YOLO model weights (6MB)
 ├── best.mlpackage/              # CoreML model for iOS
