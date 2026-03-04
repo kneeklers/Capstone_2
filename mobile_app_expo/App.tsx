@@ -24,6 +24,7 @@ export default function App() {
   const [bbox, setBbox] = useState<BBox | null>(null);
   const [processing, setProcessing] = useState(false);
   const [result, setResult] = useState<{ serialNumber: string | null; partNumber: string | null } | null>(null);
+  const [ocrLinesCount, setOcrLinesCount] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cameraReady, setCameraReady] = useState(false);
@@ -103,12 +104,14 @@ export default function App() {
         type: 'image/jpeg',
       } as any);
 
-      const { data } = await axios.post<{ lines: string[] }>(`${BACKEND_URL}/ocr`, formData, {
+      const { data } = await axios.post<{ lines: string[]; linesCount?: number }>(`${BACKEND_URL}/ocr`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 60000, // EasyOCR can be slow (30–60s on first run or CPU)
+        timeout: 60000,
       });
 
-      const extracted = extractSerialAndPartNumber(data.lines || []);
+      const lines = data.lines || [];
+      setOcrLinesCount(data.linesCount ?? lines.length);
+      const extracted = extractSerialAndPartNumber(lines);
       setResult(extracted);
       setShowResult(true);
     } catch (err: any) {
@@ -220,11 +223,19 @@ export default function App() {
               <Text style={styles.resultLabel}>Part number</Text>
               <Text style={styles.resultValue}>{result?.partNumber ?? '—'}</Text>
             </View>
+            {((result?.serialNumber == null && result?.partNumber == null) && ocrLinesCount != null) && (
+              <Text style={styles.ocrHint}>
+                {ocrLinesCount === 0
+                  ? 'OCR found no text. Hold the camera steady and ensure the plate is in focus and well lit.'
+                  : `OCR found ${ocrLinesCount} line(s) but no serial/part matched. Try framing the plate clearly.`}
+              </Text>
+            )}
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => {
                 setShowResult(false);
                 setResult(null);
+                setOcrLinesCount(null);
               }}
             >
               <Text style={styles.closeButtonText}>Done</Text>
@@ -360,6 +371,13 @@ const styles = StyleSheet.create({
   resultValue: {
     fontSize: 18,
     fontWeight: '600',
+  },
+  ocrHint: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 8,
   },
   closeButton: {
     backgroundColor: '#007AFF',

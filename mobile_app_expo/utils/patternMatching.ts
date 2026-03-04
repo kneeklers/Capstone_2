@@ -1,6 +1,7 @@
 /**
  * Serial/part number extraction – same logic as iOS ScannerViewModel.
  * Uses same patterns: P/N suffix, labeled same-line, multi-line label+value, score-based fallback.
+ * Includes OCR normalization and common misread fixes for EasyOCR output.
  */
 
 const DASH_VARIANTS = ['−', '–', '—', '―'];
@@ -11,8 +12,31 @@ function normalizeDashes(s: string): string {
   return out;
 }
 
+/** Collapse multiple spaces and trim (OCR often adds extra spaces). */
+function normalizeOCRSpaces(s: string): string {
+  return s.replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Fix common EasyOCR misreads in serial/part codes: O↔0, l/I↔1, S↔5 in digit context.
+ * Only applied to strings that already look like alphanumeric codes.
+ */
+function fixCommonOCRErrors(value: string): string {
+  if (!value || value.length < 4) return value;
+  const cleaned = value.replace(/\s/g, '');
+  if (!/^[A-Za-z0-9\-\.]+$/.test(cleaned)) return value;
+  let out = cleaned;
+  // In serial/part codes, letter O is often misread as 0 and vice versa. Prefer digit 0 when surrounded by digits.
+  out = out.replace(/(\d)O(\d)/g, '$10$2'); // O between digits -> 0
+  out = out.replace(/^O(\d)/, '0$1').replace(/(\d)O$/, '$10'); // O at start/end next to digit
+  // Lowercase l and uppercase I misread as 1 in digit context
+  out = out.replace(/(\d)[lI](\d)/g, '$11$2').replace(/(\d)[lI]$/, '$11').replace(/^[lI](\d)/, '1$1');
+  return out;
+}
+
 function cleanLine(line: string): string {
-  return normalizeDashes(line.trim().toUpperCase());
+  const trimmed = normalizeOCRSpaces(line);
+  return normalizeDashes(trimmed.toUpperCase());
 }
 
 function isAlphanumericCode(text: string): boolean {
@@ -25,7 +49,7 @@ function isAlphanumericCode(text: string): boolean {
 
 const LABELS = new Set([
   'SER', 'SERIAL', 'SERIAL N°', 'SERIAL NO', 'SERIAL NUMBER',
-  'PNR', 'P/N', 'PN', 'PART', 'PART NO', 'PART NUMBER',
+  'PNR', 'P/N', 'PN', 'PNF', 'PART', 'PART NO', 'PART NUMBER',
   'MFR', 'MODEL', 'MDL', 'REF', 'DATE', 'DOM',
   'N°MATRICULE', 'MATRICULE', 'CONTROLE', 'INSPECTION',
   'SUPPORT', 'ACCESSORY', 'GEARBOX',
@@ -41,6 +65,7 @@ const NOISE_PATTERNS = [
   'MFR ', 'BIRMINGHAM', 'ENGLAND', 'USA', 'INC.', 'LTD',
   'MAIN HEAT', 'EXCHANGER', 'AVIATION', 'INSP',
   'EID ', 'IMEI', 'MEID', 'IMEI2', 'IMEI/MEID',
+  'MFF', 'METERING UNIT', 'DMI', 'FAB', 'ASSY', 'PAT', 'US PAT',
 ];
 
 function isNoiseLine(text: string): boolean {
@@ -57,9 +82,14 @@ function isNoiseLine(text: string): boolean {
 function extractFirstCode(text: string): string {
   const normalized = normalizeDashes(text);
   const match = normalized.match(/^([A-Z0-9][A-Z0-9\-.]*[A-Z0-9])/i);
-  if (match) return match[1];
-  const first = normalized.split(/\s+/)[0] ?? normalized;
-  return first;
+  if (match) return stripTrailingJunk(match[1]);
+  const first = (normalized.split(/\s+/)[0] ?? normalized).replace(/\/+$/, '');
+  return stripTrailingJunk(first);
+}
+
+/** Remove trailing slashes and other non-code characters from extracted value. */
+function stripTrailingJunk(s: string): string {
+  return s.replace(/[\s\/,;:]+$/, '').trim();
 }
 
 function extractSerialWithOptionalPrefix(line: string): string | null {
@@ -83,10 +113,25 @@ function extractWithWordBoundary(line: string, prefix: string): string | null {
   return null;
 }
 
+/** Find a label anywhere in the line and return the code after it (for "X SER WYGP9204" style). */
+function extractAfterLabel(line: string, labels: string[]): string | null {
+  const upper = line.toUpperCase();
+  for (const label of labels) {
+    const idx = upper.indexOf(label.toUpperCase());
+    if (idx === -1) continue;
+    const after = line.slice(idx + label.length).replace(/^[\s:]+/, '');
+    const code = extractFirstCode(after);
+    if (code.length >= 4 && isAlphanumericCode(code)) return code;
+  }
+  return null;
+}
+
 function serialNumberScore(text: string): number {
   let score = 0;
   const length = text.length;
   if (length < 5 || length > 30) return 0;
+  if (/^[0-9]+\/?$/.test(text.replace(/\s/g, ''))) return 0;
+  if (text.endsWith('/')) return 0;
   const alphanumericCount = (text.match(/[A-Za-z0-9\-.]/g) || []).length;
   if (alphanumericCount / length < 0.8) return 0;
   if (/[A-Za-z]/.test(text)) score += 2;
@@ -112,12 +157,16 @@ export interface ExtractedResult {
 
 /**
  * Extract serial and part number from OCR text lines (same logic as iOS).
+ * Input lines are normalized (spaces, dashes); extracted values get common OCR fixes.
  */
 export function extractSerialAndPartNumber(textLines: string[]): ExtractedResult {
   let serialNumber: string | null = null;
   let partNumber: string | null = null;
 
-  const cleanedLines = textLines.map((line) => cleanLine(line));
+  const cleanedLines = textLines
+    .map((line) => normalizeOCRSpaces(line))
+    .filter((line) => line.length > 0)
+    .map((line) => cleanLine(line));
 
   // Step 1: Lines ending with P/N
   for (const line of cleanedLines) {
@@ -134,10 +183,10 @@ export function extractSerialAndPartNumber(textLines: string[]): ExtractedResult
     }
   }
 
-  // Step 2: Same-line labeled values
+  // Step 2: Same-line labeled values (prefix at start)
   for (const line of cleanedLines) {
     const trimmed = line.trim();
-    if (trimmed.length < 5 || isNoiseLine(trimmed)) continue;
+    if (trimmed.length < 3 || isNoiseLine(trimmed)) continue;
     if (trimmed.endsWith('P/N')) continue;
 
     if (serialNumber == null) {
@@ -154,10 +203,29 @@ export function extractSerialAndPartNumber(textLines: string[]): ExtractedResult
     if (partNumber == null) {
       const v =
         extractWithWordBoundary(trimmed, 'PNR') ??
+        extractWithWordBoundary(trimmed, 'PNF') ??
         extractWithWordBoundary(trimmed, 'P/N') ??
         extractWithWordBoundary(trimmed, 'PN') ??
         extractWithWordBoundary(trimmed, 'PART');
       if (v) partNumber = v;
+    }
+  }
+
+  // Step 2b: Label anywhere in line (e.g. "WOODWARD SER WYGP9204" or "MFF 07482 SER WYGP9204")
+  if (serialNumber == null || partNumber == null) {
+    for (const line of cleanedLines) {
+      const trimmed = line.trim();
+      if (trimmed.length < 6) continue;
+      if (serialNumber == null) {
+        const v =
+          extractAfterLabel(trimmed, ['SER', 'S/N', 'SN', 'SERIAL']) ??
+          extractAfterLabel(trimmed, ['SERIAL NO', 'SERIAL NUMBER']);
+        if (v) serialNumber = v;
+      }
+      if (partNumber == null) {
+        const v = extractAfterLabel(trimmed, ['PNF', 'P/N', 'PN', 'PART NO', 'PART NUMBER', 'PART']);
+        if (v) partNumber = v;
+      }
     }
   }
 
@@ -166,17 +234,20 @@ export function extractSerialAndPartNumber(textLines: string[]): ExtractedResult
     'SER', 'S/N', 'SN', 'SERIAL', 'SERIAL NO', 'SERIAL NUMBER',
     'SERIAL N°', 'SERIAL N', 'N°MATRICULE', 'MATRICULE',
   ];
-  const partLabels = ['PNR', 'P/N', 'PN', 'PART', 'PART NO', 'PART NUMBER'];
+  const partLabels = ['PNR', 'P/N', 'PN', 'PNF', 'PART', 'PART NO', 'PART NUMBER'];
 
   for (let i = 0; i < cleanedLines.length; i++) {
     const trimmed = cleanedLines[i].trim();
-    if (serialNumber == null && serialLabels.includes(trimmed)) {
+    const isSerialLabel = serialLabels.some((l) => trimmed === l || trimmed.startsWith(l + ':') || trimmed.startsWith(l + ' '));
+    const isPartLabel = partLabels.some((l) => trimmed === l || trimmed.startsWith(l + ':') || trimmed.startsWith(l + ' '));
+    if (serialNumber == null && isSerialLabel) {
       const next = cleanedLines[i + 1]?.trim();
-      if (next && next.length >= 4 && !isLabelLine(next) && isAlphanumericCode(next)) {
-        serialNumber = next;
+      if (next && next.length >= 4 && !isLabelLine(next)) {
+        const code = extractFirstCode(next);
+        if (code.length >= 4 && isAlphanumericCode(code)) serialNumber = code;
       }
     }
-    if (partNumber == null && partLabels.includes(trimmed)) {
+    if (partNumber == null && isPartLabel) {
       const next = cleanedLines[i + 1]?.trim();
       if (next && next.length >= 4 && !isLabelLine(next)) {
         const code = extractFirstCode(next);
@@ -198,6 +269,16 @@ export function extractSerialAndPartNumber(textLines: string[]): ExtractedResult
     }
     candidates.sort((a, b) => b[1] - a[1]);
     if (candidates.length > 0) serialNumber = candidates[0][0];
+  }
+
+  // Apply common OCR error fixes and strip trailing junk
+  if (serialNumber) {
+    serialNumber = fixCommonOCRErrors(stripTrailingJunk(serialNumber));
+    if (serialNumber === '-' || serialNumber.length < 4) serialNumber = null;
+  }
+  if (partNumber) {
+    partNumber = fixCommonOCRErrors(stripTrailingJunk(partNumber));
+    if (partNumber === '-' || partNumber.length < 4) partNumber = null;
   }
 
   return { serialNumber, partNumber };
