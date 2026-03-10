@@ -10,22 +10,31 @@
 
 ---
 
+## Abstract
+
+Aviation maintenance and manufacturing rely on accurate transcription of serial numbers from component nameplates—a manual process that is time-consuming, error-prone, and subject to character ambiguity. This capstone project applies artificial intelligence (AI) and computer vision to automate serial number detection and extraction. The solution combines a deep learning object detection model (YOLOv8) for nameplate localisation, on-device optical character recognition (OCR) via Apple’s Vision framework, and rule-based pattern matching for field identification. An iterative, AI-centric methodology was adopted: transfer learning was used to adapt a pre-trained detector to aviation nameplates with limited annotated data; multiple preprocessing strategies were evaluated to improve OCR robustness on industrial text; and deployment constraints led to a modular pipeline optimised for mobile inference. The final iOS application achieves 83.3% exact-match accuracy on serial number extraction and processes images in 127 ms on-device, exceeding the 80% accuracy target and enabling fully offline operation. The work demonstrates the application of AI techniques—including convolutional neural networks, transfer learning, and on-device neural inference—to a real industrial problem under data and platform constraints, and contributes a practical reference for vision-based identification in regulated industries. Findings are discussed with reference to the literature on object detection, scene text recognition, and industrial OCR.
+
+**Keywords:** artificial intelligence; computer vision; object detection; optical character recognition; YOLO; transfer learning; aviation; serial number extraction; on-device inference; iOS.
+
+---
+
 ## Table of Contents
 
-1. [Introduction](#1-introduction)
-2. [Background and Literature Review](#2-background-and-literature-review)
-3. [Analysis and Solution Formulation](#3-analysis-and-solution-formulation)
-4. [Requirements Analysis](#4-requirements-analysis)
-5. [Methodology and Approach](#5-methodology-and-approach)
-6. [Implementation](#6-implementation)
-7. [Testing and Evaluation](#7-testing-and-evaluation)
-8. [Challenges and Solutions](#8-challenges-and-solutions)
-9. [Knowledge Application](#9-knowledge-application)
-10. [Project Management and Initiative](#10-project-management-and-initiative)
-11. [Professional and Interpersonal Conduct](#11-professional-and-interpersonal-conduct)
-12. [Future Work](#12-future-work)
-13. [Conclusion](#13-conclusion)
-14. [References](#14-references)
+1. [Abstract](#abstract)
+2. [Introduction](#1-introduction)
+3. [Background and Literature Review](#2-background-and-literature-review)
+4. [Analysis and Solution Formulation](#3-analysis-and-solution-formulation)
+5. [Requirements Analysis](#4-requirements-analysis)
+6. [Methodology and Approach](#5-methodology-and-approach)
+7. [Implementation](#6-implementation)
+8. [Testing and Evaluation](#7-testing-and-evaluation)
+9. [Challenges and Solutions](#8-challenges-and-solutions)
+10. [Knowledge Application](#9-knowledge-application)
+11. [Project Management and Initiative](#10-project-management-and-initiative)
+12. [Professional and Interpersonal Conduct](#11-professional-and-interpersonal-conduct)
+13. [Future Work](#12-future-work)
+14. [Conclusion](#13-conclusion)
+15. [References](#14-references)
 
 ---
 
@@ -49,7 +58,7 @@ This report is structured to address all seven (7) assessment domains of the AAI
 
 ### 1.1 Project Context
 
-This capstone project was undertaken as a combined effort between the academic requirements of the AAI4001 Capstone Project and the Integrated Work Study Programme (IWSP) internship at Aicadium Pte Ltd. The project addresses a real industry problem: the manual transcription of serial numbers from aviation component nameplates, which is time-consuming, error-prone, and labour-intensive.
+This capstone project was undertaken as a combined effort between the academic requirements of the AAI4001 Capstone Project and the Integrated Work Study Programme (IWSP) internship at Aicadium Pte Ltd. The project addresses a real industry problem through the lens of **artificial intelligence (AI)** and **computer vision**: the manual transcription of serial numbers from aviation component nameplates, which is time-consuming, error-prone, and labour-intensive. The work applies core AI methodologies—including deep learning for visual recognition, transfer learning under data constraints, and on-device neural network inference—to automate a task that has remained largely manual in aviation maintenance (Chen et al., 2021; Zhang et al., 2020).
 
 ### 1.2 Problem Statement
 
@@ -103,20 +112,20 @@ Computer vision reading existing serial plates offers unique advantages:
 
 ### 1.4 Project Objectives
 
-The primary objective was to develop an automated system capable of:
+The primary objective was to develop an **AI-driven automated system** capable of:
 
-1. **Detecting** serial nameplates in images using object detection
-2. **Extracting** text from detected regions using Optical Character Recognition (OCR)
-3. **Identifying** specific fields (serial number, part number) using pattern matching
+1. **Detecting** serial nameplates in images using **deep learning-based object detection** (convolutional neural networks)
+2. **Extracting** text from detected regions using **neural OCR** (Optical Character Recognition)
+3. **Identifying** specific fields (serial number, part number) using pattern matching and heuristics
 4. **Achieving** ≥80% accuracy while being significantly faster than manual transcription
-5. **Deploying** across multiple platforms (Web, iOS, Mobile)
+5. **Deploying** across multiple platforms (Web, iOS, Mobile) with emphasis on **on-device AI inference** where applicable
 
 ### 1.5 Project Scope
 
 The final deliverable is a native iOS application that provides:
-- Real-time camera guidance using YOLO object detection
-- On-device OCR using Apple Vision framework
-- Intelligent serial number extraction using regex pattern matching
+- **Real-time camera guidance** using a custom-trained YOLOv8 object detection model (on-device inference via CoreML)
+- **On-device neural OCR** using Apple Vision framework
+- **Intelligent serial number extraction** using regex pattern matching and context-aware scoring
 - Scan history and result management
 
 ### 1.6 Domain Knowledge: Aviation Serial Plates
@@ -148,29 +157,29 @@ A serial nameplate (also called data plate or identification plate) is a metal o
 
 ## 2. Background and Literature Review
 
-This section provides a comprehensive review of the technologies, methodologies, and related work relevant to automated serial number extraction. The review covers object detection algorithms, optical character recognition systems, image preprocessing techniques, and industrial applications of vision-based text extraction.
+This section provides a comprehensive review of the **artificial intelligence (AI)** and **computer vision** technologies, methodologies, and related work relevant to automated serial number extraction. The review is organised around the main components of an AI-powered vision pipeline: (1) deep learning-based object detection for localising regions of interest, (2) neural optical character recognition (OCR) for text extraction, (3) image preprocessing to improve robustness of learned models, and (4) transfer learning and mobile deployment of AI models. The discussion draws on both foundational literature in machine learning and computer vision and applied work in industrial and aviation contexts (Chen et al., 2021; Long et al., 2021; Zhao et al., 2019).
 
 ### 2.1 Object Detection Technologies
 
-Object detection is a fundamental computer vision task that involves both localizing and classifying objects within images. The field has evolved significantly over the past decade, with deep learning approaches now dominating the state-of-the-art (Zhao et al., 2019).
+Object detection is a fundamental **computer vision** task that involves both *localising* (bounding box regression) and *classifying* objects within images. It sits at the intersection of image classification and instance segmentation and has become a core application of **deep learning** in perception systems (Zhao et al., 2019). The field has evolved significantly over the past decade: traditional methods based on hand-crafted features have been superseded by **convolutional neural network (CNN)**-based approaches that now dominate benchmarks (Girshick et al., 2014; Ren et al., 2015; Redmon et al., 2016).
 
 #### 2.1.1 Evolution of Object Detection
 
-Traditional object detection relied on hand-crafted features such as Histogram of Oriented Gradients (HOG) combined with Support Vector Machines (Dalal & Triggs, 2005). While effective for specific applications, these methods struggled with scale variation and complex backgrounds.
+Traditional object detection relied on hand-crafted features such as Histogram of Oriented Gradients (HOG) combined with Support Vector Machines (Dalal & Triggs, 2005). While effective for specific applications, these methods struggled with scale variation, occlusion, and complex backgrounds—limitations that **data-driven**, **learned representations** address (Zhao et al., 2019).
 
-The introduction of Region-based Convolutional Neural Networks (R-CNN) by Girshick et al. (2014) marked a paradigm shift, achieving significant improvements on the PASCAL VOC benchmark. Subsequent improvements led to Fast R-CNN (Girshick, 2015) and Faster R-CNN (Ren et al., 2015), which introduced Region Proposal Networks (RPNs) to generate candidate regions more efficiently.
+The introduction of Region-based Convolutional Neural Networks (R-CNN) by Girshick et al. (2014) marked a paradigm shift towards **deep learning** for detection, achieving significant improvements on the PASCAL VOC benchmark by using CNNs to extract features from region proposals. Subsequent improvements led to Fast R-CNN (Girshick, 2015), which shared computation via a single CNN over the image, and Faster R-CNN (Ren et al., 2015), which introduced **Region Proposal Networks (RPNs)** to generate candidate regions in a single forward pass, making the pipeline fully differentiable and end-to-end trainable.
 
 #### 2.1.2 Two-Stage vs. Single-Stage Detectors
 
-**Two-Stage Detectors** operate in two phases: region proposal followed by classification and bounding box regression. Faster R-CNN (Ren et al., 2015) remains a benchmark in this category, achieving high accuracy but with inference times of approximately 200ms per image on GPU hardware.
+**Two-Stage Detectors** operate in two phases: region proposal followed by classification and bounding box regression. Faster R-CNN (Ren et al., 2015) remains a benchmark in this category, achieving high accuracy but with inference times of approximately 200 ms per image on GPU hardware; such latency is often prohibitive for real-time or mobile applications (Howard et al., 2017).
 
-**Single-Stage Detectors** perform detection in a single forward pass, trading some accuracy for significant speed improvements. Notable architectures include:
+**Single-Stage Detectors** perform detection in a single forward pass through the network, trading some accuracy for significant speed improvements and simpler deployment. Notable architectures in the literature include:
 
 - **SSD (Single Shot MultiBox Detector)**: Liu et al. (2016) proposed using multi-scale feature maps to detect objects at different sizes, achieving 59 FPS on VOC2007 with 74.3% mAP.
 
 - **YOLO (You Only Look Once)**: Redmon et al. (2016) introduced a unified architecture that frames detection as a regression problem. The original YOLO processed images at 45 FPS while achieving competitive accuracy.
 
-- **RetinaNet**: Lin et al. (2017) addressed the class imbalance problem in single-stage detectors through Focal Loss, achieving accuracy comparable to two-stage methods.
+- **RetinaNet**: Lin et al. (2017) addressed the **class imbalance** problem in single-stage detectors through **Focal Loss**, achieving accuracy comparable to two-stage methods and influencing later one-stage designs.
 
 #### 2.1.3 YOLO Architecture Evolution
 
@@ -187,35 +196,35 @@ The YOLO family has undergone significant evolution:
 
 *Table 2.1: Evolution of YOLO architectures (Redmon et al., 2016; Redmon & Farhadi, 2017, 2018; Bochkovskiy et al., 2020; Jocher et al., 2023)*
 
-**YOLOv8**, released by Ultralytics in January 2023, represents the current state-of-the-art in the YOLO family. Key architectural improvements include:
+**YOLOv8**, released by Ultralytics in January 2023, represents the current state-of-the-art in the YOLO family and was selected for this project. Key architectural improvements with relevance to **model efficiency** and **deployment** include:
 
-1. **Anchor-Free Detection**: Eliminates the need for predefined anchor boxes, simplifying the architecture and improving generalization (Jocher et al., 2023).
+1. **Anchor-Free Detection**: Eliminates the need for predefined anchor boxes, simplifying the architecture and improving generalisation to novel aspect ratios and object sizes (Jocher et al., 2023).
 
-2. **Decoupled Head**: Separates classification and localization branches, improving training convergence (Ge et al., 2021).
+2. **Decoupled Head**: Separates classification and localisation branches in the detection head, improving training convergence and accuracy (Ge et al., 2021).
 
-3. **C2f Module**: Enhanced feature extraction through Cross Stage Partial connections with two convolutions.
+3. **C2f Module**: Enhanced feature extraction through Cross Stage Partial (CSP) connections with two convolutions, balancing representational capacity and computational cost.
 
-4. **Multi-Format Export**: Native support for ONNX, CoreML, TensorRT, and other deployment formats.
+4. **Multi-Format Export**: Native support for ONNX, CoreML, TensorRT, and other deployment formats enables **on-device inference** without custom conversion pipelines (Apple Inc., 2023; Jocher et al., 2023).
 
-For this project, YOLOv8n (nano variant) was selected due to its optimal balance of speed (~280 FPS) and accuracy (37.3% mAP on COCO), with straightforward CoreML export for iOS deployment (Jocher et al., 2023).
+For this project, **YOLOv8n (nano variant)** was selected due to its optimal balance of speed (~280 FPS on GPU) and accuracy (37.3% mAP on COCO), with straightforward CoreML export for **on-device iOS deployment**—aligning with the requirement for offline, low-latency inference (Jocher et al., 2023; Howard et al., 2017).
 
 ### 2.2 Optical Character Recognition (OCR)
 
-Optical Character Recognition converts images containing text into machine-readable strings. Modern OCR systems employ deep learning for both text detection and recognition (Long et al., 2021).
+Optical Character Recognition (OCR) converts images containing text into machine-readable character sequences and is a core **AI and computer vision** application for document understanding and scene text reading (Long et al., 2021). Modern OCR systems employ **deep learning** for both *text detection* (where text appears) and *text recognition* (what the text says), moving beyond earlier rule-based and template-matching approaches (Baek et al., 2019; Shi et al., 2016).
 
 #### 2.2.1 OCR Pipeline Architecture
 
-Contemporary OCR systems typically follow a two-stage pipeline (Baek et al., 2019):
+Contemporary OCR systems typically follow a **two-stage pipeline** that decouples detection and recognition (Baek et al., 2019; Long et al., 2021):
 
-1. **Text Detection**: Locating text regions within an image using techniques such as:
-   - EAST (Efficient and Accurate Scene Text Detector) (Zhou et al., 2017)
-   - CRAFT (Character Region Awareness for Text Detection) (Baek et al., 2019)
-   - DBNet (Differentiable Binarization) (Liao et al., 2020)
+1. **Text Detection**: Locating text regions within an image using **CNN-based** or **differentiable** detectors, including:
+   - EAST (Efficient and Accurate Scene Text Detector), a fully convolutional detector (Zhou et al., 2017)
+   - CRAFT (Character Region Awareness for Text Detection), which uses character-level affinity for robust detection (Baek et al., 2019)
+   - DBNet (Differentiable Binarization), which learns binarisation thresholds for text segmentation (Liao et al., 2020)
 
-2. **Text Recognition**: Converting detected regions to character sequences using:
-   - CRNN (Convolutional Recurrent Neural Network) (Shi et al., 2016)
-   - Attention-based sequence-to-sequence models (Lee & Osindero, 2016)
-   - Transformer-based architectures (Li et al., 2021)
+2. **Text Recognition**: Converting detected regions to character sequences using **sequence recognition** models, including:
+   - CRNN (Convolutional Recurrent Neural Network), combining CNN feature extraction with recurrent layers for sequence modelling (Shi et al., 2016)
+   - Attention-based sequence-to-sequence models for irregular text (Lee & Osindero, 2016)
+   - **Transformer-based** architectures such as TrOCR, leveraging pre-trained language and vision models (Li et al., 2021)
 
 #### 2.2.2 OCR Engine Comparison
 
@@ -223,7 +232,7 @@ A systematic evaluation of available OCR engines was conducted based on accuracy
 
 **Tesseract OCR**
 
-Tesseract, originally developed by HP Labs and now maintained by Google, is the most widely deployed open-source OCR engine (Smith, 2007). Version 4.0 introduced LSTM-based recognition, improving accuracy on complex layouts. However, Tesseract performs poorly on low-contrast industrial text, achieving only 60-70% character accuracy on engraved serial plates in preliminary testing.
+Tesseract, originally developed by HP Labs and now maintained by Google, is the most widely deployed open-source OCR engine (Smith, 2007). Version 4.0 introduced **LSTM-based recognition**, moving towards learned rather than purely rule-based recognition. However, Tesseract is optimised for document text and performs poorly on low-contrast, non-standard industrial text; in preliminary testing it achieved only 60–70% character accuracy on engraved serial plates (Smith, 2007; Zhang et al., 2020).
 
 **EasyOCR**
 
@@ -235,13 +244,13 @@ Developed by Baidu, PaddleOCR achieves state-of-the-art results on multiple benc
 
 **Apple Vision Framework**
 
-Apple's Vision framework provides on-device text recognition optimized for iOS/macOS (Apple Inc., 2023). Key advantages include:
-- Hardware acceleration via Neural Engine
-- Sub-200ms inference on modern iPhones
-- Offline operation with no cloud dependency
-- Privacy-preserving on-device processing
+Apple's Vision framework provides **on-device neural text recognition** optimised for iOS/macOS (Apple Inc., 2023). Key advantages for **edge AI** deployment include:
+- **Hardware acceleration** via the Neural Engine (dedicated ML silicon)
+- Sub-200 ms inference on modern iPhones, suitable for real-time use
+- **Offline operation** with no cloud dependency—important for sensitive industrial data (Chen et al., 2021)
+- **Privacy-preserving** on-device processing, aligning with data governance requirements
 
-The VNRecognizeTextRequest API supports both fast (.fast) and accurate (.accurate) recognition levels, with the accurate mode achieving approximately 95% character accuracy on printed text (Apple Inc., 2023).
+The VNRecognizeTextRequest API supports both fast (.fast) and accurate (.accurate) recognition levels; the accurate mode leverages a larger model and achieves approximately 95% character accuracy on printed text in Apple’s documentation (Apple Inc., 2023).
 
 **Google Cloud Vision API**
 
@@ -275,19 +284,19 @@ Research by Zhang et al. (2020) demonstrated that general-purpose OCR models ach
 
 ### 2.3 Image Preprocessing Techniques
 
-Image preprocessing significantly impacts OCR accuracy, particularly for degraded industrial text (Lins et al., 2017). This section reviews techniques applicable to serial plate imagery.
+Image preprocessing is a critical component of **vision pipelines** when inputs deviate from the conditions on which **pre-trained models** were trained; it significantly impacts OCR accuracy, particularly for degraded or low-contrast industrial text (Lins et al., 2017; Ye & Doermann, 2015). This section reviews classical and widely used techniques applicable to serial plate imagery that can improve the input distribution for downstream **neural OCR** models.
 
 #### 2.3.1 Contrast Enhancement
 
 **Histogram Equalization** redistributes pixel intensities to utilize the full dynamic range. While effective for globally underexposed images, it can amplify noise in local regions (Gonzalez & Woods, 2018).
 
-**CLAHE (Contrast Limited Adaptive Histogram Equalization)** addresses this by operating on small tiles rather than the entire image, with contrast limiting to prevent noise amplification (Pizer et al., 1987). CLAHE has become standard preprocessing for medical imaging and industrial inspection applications.
+**CLAHE (Contrast Limited Adaptive Histogram Equalization)** addresses this by operating on small tiles rather than the entire image, with contrast limiting to prevent noise amplification (Pizer et al., 1987). CLAHE has become standard preprocessing for medical imaging and industrial inspection applications (Gonzalez & Woods, 2018).
 
 Implementation parameters significantly affect results:
-- **Clip Limit**: Controls contrast amplification (typically 2.0-4.0)
+- **Clip Limit**: Controls contrast amplification (typically 2.0–4.0)
 - **Tile Grid Size**: Determines local region size (commonly 8×8)
 
-Studies show CLAHE improves OCR accuracy by 10-15% on low-contrast industrial images (Ye & Doermann, 2015).
+Empirical studies report that CLAHE can improve OCR accuracy by on the order of 10–15% on low-contrast industrial images when compared to raw or globally equalised inputs (Ye & Doermann, 2015).
 
 #### 2.3.2 Morphological Operations
 
@@ -311,25 +320,25 @@ TopHat(I) = I - Opening(I)
 
 #### 2.3.4 Resolution Enhancement
 
-Low-resolution captures limit OCR accuracy due to insufficient pixel information per character. **Super-Resolution** techniques can reconstruct high-frequency details:
+Low-resolution captures limit OCR accuracy due to insufficient pixel information per character. **Super-resolution** techniques can reconstruct high-frequency details to better match the resolution at which **neural OCR** models were trained:
 
-- **Bicubic Interpolation**: Standard approach, computationally efficient but introduces smoothing
-- **ESRGAN (Enhanced Super-Resolution GAN)**: Deep learning approach achieving 4× upscaling with realistic texture generation (Wang et al., 2018)
+- **Bicubic Interpolation**: Classical approach, computationally efficient but introduces smoothing and does not recover true high-frequency detail.
+- **ESRGAN (Enhanced Super-Resolution GAN)**: A **deep learning** (generative adversarial network) approach achieving 4× upscaling with realistic texture generation (Wang et al., 2018).
 
-Research indicates OCR accuracy improves logarithmically with resolution up to approximately 300 DPI equivalent (Smith, 2007).
+Research indicates that OCR accuracy improves with resolution up to approximately 300 DPI equivalent; beyond that, gains diminish (Smith, 2007).
 
 ### 2.4 Transfer Learning and Model Adaptation
 
-Transfer learning enables applying knowledge from pre-trained models to new domains with limited data (Pan & Yang, 2010).
+**Transfer learning** is a central methodology in **applied AI** and **deep learning**: it enables applying knowledge from models trained on large, general-purpose datasets to new domains or tasks with limited labelled data (Pan & Yang, 2010). For object detection and OCR, this typically means fine-tuning or using as-is models pre-trained on benchmarks such as COCO (Lin et al., 2014) or large text corpora, rather than training from scratch—which would require far more domain-specific data and compute.
 
 #### 2.4.1 Transfer Learning in Object Detection
 
 YOLOv8 models are pre-trained on COCO (Common Objects in Context), containing 330K images across 80 categories (Lin et al., 2014). Fine-tuning on domain-specific data adapts the learned features while preserving general visual understanding.
 
-Best practices for transfer learning in object detection (Jocher et al., 2023):
-- Freeze early layers (low-level features) initially
-- Use lower learning rate than training from scratch (typically 0.001 → 0.0001)
-- Employ data augmentation to prevent overfitting on small datasets
+Best practices for **transfer learning** in object detection, as documented by Ultralytics and widely adopted (Jocher et al., 2023; Pan & Yang, 2010), include:
+- **Freezing** early (backbone) layers initially, as low-level visual features generalise across domains
+- Using a **lower learning rate** than training from scratch (e.g. 0.001 → 0.0001) to avoid catastrophic forgetting
+- **Data augmentation** (rotation, brightness, contrast, etc.) to increase effective dataset size and reduce overfitting on small labelled sets
 
 #### 2.4.2 Domain Adaptation for OCR
 
@@ -407,17 +416,17 @@ YOLOv8 exports directly to CoreML format via the Ultralytics library, enabling s
 
 ### 2.7 Summary of Literature Review
 
-This review identified the following key findings informing the project approach:
+This review identified the following key findings that directly informed the **AI-centric** design and methodology of the project:
 
-1. **YOLOv8 provides optimal detection performance** for real-time mobile applications, with native CoreML export support (Jocher et al., 2023).
+1. **YOLOv8 provides a strong detection backbone** for real-time mobile applications, with native CoreML export for on-device inference (Jocher et al., 2023; Howard et al., 2017).
 
-2. **Apple Vision Framework offers the best OCR solution for iOS**, combining high accuracy with sub-200ms inference (Apple Inc., 2023).
+2. **Apple Vision Framework offers the most suitable OCR solution for iOS** in this setting, combining neural recognition accuracy with sub-200 ms inference and offline operation (Apple Inc., 2023; Chen et al., 2021).
 
-3. **Preprocessing significantly impacts industrial OCR accuracy**, with CLAHE and morphological operations most effective for engraved text (Pizer et al., 1987; Ye & Doermann, 2015).
+3. **Preprocessing is essential for industrial OCR**: CLAHE and morphological operations are among the most effective for low-contrast and engraved text, and can yield substantial accuracy gains (Pizer et al., 1987; Ye & Doermann, 2015; Zhang et al., 2020).
 
-4. **Transfer learning enables effective detection** with limited domain-specific data (Pan & Yang, 2010).
+4. **Transfer learning is the practical approach** for training a nameplate detector with limited annotated aviation data (Pan & Yang, 2010; Jocher et al., 2023).
 
-5. **No public datasets exist for aviation serial plates**, necessitating creative approaches to training and evaluation.
+5. **No public datasets exist for aviation serial plates**, so the project relied on in-house annotation, augmentation, and pre-trained models rather than large-scale domain-specific training (Zhang et al., 2020).
 
 ---
 
@@ -560,9 +569,11 @@ The serial number extraction problem was decomposed into discrete sub-problems:
 
 ## 5. Methodology and Approach
 
+This section describes the **research strategy and methodology** used to develop the AI-powered serial number extraction system. The approach combines **iterative software development** with **experiment-driven refinement** of the vision and ML pipeline: each phase produced measurable outcomes (e.g. accuracy, latency) that informed the next design and technology choices (Jocher et al., 2023; Pan & Yang, 2010). The methodology is reported with sufficient detail to allow replication of the AI pipeline (model choice, training setup, evaluation metrics) and to support the discussion of results with reference to the literature (Section 2).
+
 ### 5.1 Development Approach
 
-An **iterative prototyping methodology** was adopted, allowing for progressive refinement based on testing results. The project spanned from October 2025 to February 2026, progressing through nine development phases across three major platform iterations:
+An **iterative prototyping methodology** was adopted, allowing for progressive refinement based on quantitative testing and qualitative feedback from the industry partner. This aligns with common practice in applied AI and computer vision projects where requirements and feasibility become clearer through implementation (Chen et al., 2021). The project spanned from October 2025 to February 2026, progressing through multiple development phases across three major platform iterations:
 
 ```
 Phase 1-4: Streamlit Web Application (Oct-Nov 2025)
@@ -574,20 +585,24 @@ Phase 10: React Native (Expo Go) Mobile App (Dec 2025-Jan 2026)
 Phase 11: iOS Native Application (Jan-Feb 2026)
 ```
 
-### 5.2 Detailed Development Phases
+### 5.2 Detailed Development Phases (AI Pipeline Components)
+
+The following phases correspond to the main **AI and vision pipeline** components: OCR selection, detection model training, preprocessing design, and deployment. Each phase is described with objectives, methods, and outcomes to support reproducibility and alignment with the literature (Sections 2 and 7).
 
 #### Phase 1: OCR Engine Evaluation
 
-**Objective**: Identify the most suitable OCR engine for industrial text recognition.
+**Objective**: Identify the most suitable **neural OCR** engine for industrial text recognition under the constraints of accuracy, speed, and deployment (offline, cross-platform or iOS).
+
+**Method**: A comparative evaluation was conducted using a small held-out set of serial plate images with ground-truth labels. Engines were assessed on (1) character-level and string-level accuracy, (2) inference time, and (3) feasibility of deployment on target platforms (Smith, 2007; Long et al., 2021).
 
 **Engines Evaluated**:
-| Engine | Outcome |
-|--------|---------|
-| **Tesseract OCR** | Lower accuracy on engraved/low-contrast text |
-| **PaddleOCR** | Installation failures on Apple Silicon (M1/M2) |
-| **EasyOCR** | Selected - superior accuracy, native M1/M2 support |
+| Engine | Outcome | Rationale |
+|--------|---------|-----------|
+| **Tesseract OCR** | Rejected | Lower accuracy on engraved/low-contrast text; LSTM mode still tuned for document-like input (Smith, 2007) |
+| **PaddleOCR** | Rejected | Installation failures on Apple Silicon (M1/M2); framework compatibility issues |
+| **EasyOCR** | Selected for prototype | Superior accuracy on test images; native M1/M2 support; CRAFT + CRNN pipeline (JaidedAI, 2020; Baek et al., 2019; Shi et al., 2016) |
 
-**Learning**: Always verify platform compatibility before committing to frameworks, especially with newer hardware architectures.
+**Learning**: Platform and hardware compatibility must be verified early when selecting AI/ML frameworks, especially for Apple Silicon and mobile deployment (Howard et al., 2017).
 
 #### Phase 2: Initial Streamlit Prototype
 
@@ -638,28 +653,33 @@ Phase 11: iOS Native Application (Jan-Feb 2026)
 
 #### Phase 6: YOLOv8 Object Detection Integration
 
-**Objective**: Automate serial plate region detection using deep learning.
+**Objective**: Automate serial plate region detection using **deep learning-based object detection**, reducing the need for manual cropping and improving consistency (Redmon et al., 2016; Jocher et al., 2023).
 
-**Dataset Preparation**:
-- Collected 150+ images of aviation component serial plates
-- Used Roboflow for image annotation with bounding boxes
-- Applied augmentation (rotation, brightness, contrast) to expand dataset to 400+ images
+**Dataset Preparation** (following good practice for small-data fine-tuning; Pan & Yang, 2010):
+- Collected 150+ images of aviation component serial plates (varied lighting, angles, and plate conditions).
+- Used **Roboflow** for bounding-box annotation and dataset versioning (Roboflow, 2023).
+- Applied **data augmentation** (rotation, brightness, contrast, blur) to expand the effective dataset to 400+ images and improve generalisation (Jocher et al., 2023).
 
-**Model Training** (conducted on Google Colab):
-- Model: YOLOv8n (nano) for speed
-- Input size: 640×640
-- Epochs: 50-100
-- Batch size: 16
+**Model and Training Protocol** (conducted on Google Colab with GPU):
+- **Model**: YOLOv8n (nano), pre-trained on COCO (Lin et al., 2014), then fine-tuned on the nameplate dataset (**transfer learning**; Pan & Yang, 2010).
+- **Input size**: 640×640 pixels (default YOLOv8 input).
+- **Epochs**: 50–100; training monitored for overfitting via validation loss.
+- **Batch size**: 16.
+- **Learning rate**: Default Ultralytics scheduler; lower than from-scratch training to preserve pre-trained features (Jocher et al., 2023).
+
+**Evaluation**: Detection performance was measured as the proportion of test images in which the predicted bounding box had sufficient overlap (IoU) with the ground-truth nameplate region and confidence above a chosen threshold.
 
 **Results**:
-- Detection accuracy: 85-90% on test images
-- Processing speed: ~0.1-0.3 seconds per image on M2 chip
+- **Detection accuracy**: Approximately 85–90% on the held-out test images (correct localisation of nameplate).
+- **Inference speed**: ~0.1–0.3 s per image on Apple M2, suitable for near–real-time use before conversion to CoreML for iOS (Jocher et al., 2023; Apple Inc., 2023).
 
 #### Phase 7: Advanced Preprocessing Pipeline
 
-**Objective**: Maximize OCR accuracy through multiple preprocessing strategies.
+**Objective**: Maximise **OCR accuracy** through multiple preprocessing strategies, informed by the literature on industrial and low-contrast text (Ye & Doermann, 2015; Pizer et al., 1987; Gonzalez & Woods, 2018; Zhang et al., 2020).
 
-**15 Preprocessing Methods Implemented**:
+**Rationale**: Pre-trained OCR models are typically trained on cleaner, higher-contrast text; preprocessing aims to make the input distribution closer to that training distribution or to enhance discriminative features (Lins et al., 2017).
+
+**15 Preprocessing Methods Implemented** (each producing one variant of the cropped plate image for OCR):
 
 | Method | Technique | Use Case |
 |--------|-----------|----------|
@@ -679,20 +699,20 @@ Phase 11: iOS Native Application (Jan-Feb 2026)
 | Black Hat | Black top-hat morphological transform | Dark text on light background |
 | Edge Enhancement | Sobel/Canny edge detection | Emphasize character boundaries |
 
-**Majority Voting System**:
-- Collect all extractions from preprocessing methods
-- Score each candidate using composite scoring function
-- Select highest-confidence result
-- Provide top 3 candidates for user review
+**Ensemble / Majority-Voting Strategy** (to exploit multiple preprocessing hypotheses):
+- Run OCR on each of the 15 preprocessed variants and collect all extracted text candidates.
+- **Score** each candidate using a composite scoring function (context labels such as "S/N", format regex, length, alphanumeric mix; see Section 6).
+- **Select** the highest-scoring candidate as the primary result.
+- **Expose** the top 3 candidates for user review and correction, supporting both accuracy and interpretability (Chen et al., 2021).
 
 #### Phase 8: LLM Post-Processing Exploration
 
-**Objective**: Evaluate Large Language Models for intelligent serial number identification.
+**Objective**: Evaluate **Large Language Models (LLMs)** as a post-processing step for identifying the serial number from raw OCR output (i.e. using **natural language understanding** to select the correct field from multiple text strings).
 
 **Motivation**:
-- Regex patterns require continuous maintenance
-- LLMs can understand context and semantic meaning
-- Potential for more flexible, adaptable extraction
+- Regex and rule-based patterns require maintenance as new plate formats appear.
+- LLMs can leverage **context and semantic meaning** (e.g. "S/N" vs "P/N") without hand-written rules.
+- Potential for more flexible, adaptable extraction in the presence of format variation.
 
 **Implementation**:
 - Set up Ollama for local LLM inference
@@ -722,7 +742,7 @@ P/N 7530E77 S/N XR45289-3 → Extract: XR45289-3
   - Requires 8GB+ RAM for model hosting
   - Occasional hallucinations or incorrect prioritization
 
-**Decision**: LLM approach implemented for experimental comparison but **not integrated into production** due to speed and consistency concerns.
+**Decision**: The LLM approach was implemented for **experimental comparison** but **not integrated into production** due to (1) latency (~2–3 s vs. <0.1 s for regex), (2) non-determinism and occasional hallucinations, and (3) resource requirements (e.g. 8 GB+ RAM for local inference). Deterministic regex with context-aware scoring was retained for the final system to meet reliability and performance requirements (Section 4).
 
 #### Phase 9: Final Web Application
 
@@ -736,7 +756,7 @@ P/N 7530E77 S/N XR45289-3 → Extract: XR45289-3
 
 ### 5.2 Iteration 1: Streamlit Web Application
 
-**Objective**: Establish baseline OCR pipeline and evaluate preprocessing techniques.
+**Objective**: Establish a **baseline OCR pipeline** and systematically evaluate preprocessing techniques (Section 2.3) on industrial text.
 
 **Implementation**:
 - Built using Python with Streamlit framework
@@ -768,19 +788,20 @@ P/N 7530E77 S/N XR45289-3 → Extract: XR45289-3
 
 ### 5.4 Iteration 3: iOS Native Application (Final)
 
-**Objective**: Achieve optimal performance with native camera and on-device OCR.
+**Objective**: Achieve optimal performance with native camera and **on-device AI inference** for both detection and OCR, meeting the non-functional requirements for latency and offline operation (Section 4).
 
-**Implementation**:
-- Developed using Swift and SwiftUI
-- Converted YOLO model to CoreML for on-device inference (Jocher et al., 2023)
-- Integrated Apple Vision framework for OCR (Apple Inc., 2023)
-- Implemented comprehensive real-time guidance system
+**Implementation** (AI/ML components):
+- **Detection**: YOLOv8n model exported from PyTorch/Ultralytics to **CoreML** format and run on-device via the Core ML framework; inference is accelerated by the **Neural Engine** where available (Apple Inc., 2023; Jocher et al., 2023).
+- **OCR**: Apple **Vision** framework’s `VNRecognizeTextRequest` with `.accurate` recognition level, providing neural text recognition on-device (Apple Inc., 2023).
+- **UI and camera**: Swift, SwiftUI, and AVFoundation for full camera control and real-time guidance overlay.
+
+**Evaluation**: Serial number extraction was evaluated on a fixed test set with ground-truth labels; **exact match** of the primary extracted string to the expected serial number was used as the accuracy metric (Section 7).
 
 **Achievements**:
-- Full camera control via AVFoundation
-- Fast processing: 127ms average (48x faster than Python backend)
-- Completely offline operation—addressing privacy concerns for industrial data (Chen et al., 2021)
-- Higher OCR accuracy: 83.3% exact match
+- Full camera control via AVFoundation.
+- **Processing latency**: 127 ms average end-to-end (48× faster than the Python/EasyOCR backend), meeting the <500 ms target (NFR2).
+- **Fully offline** operation—addressing privacy and connectivity requirements for industrial data (Chen et al., 2021).
+- **Serial number accuracy**: 83.3% exact match on the evaluation set, exceeding the 80% target (NFR1).
 
 ### 5.5 OCR Engine Evolution
 
@@ -808,20 +829,20 @@ An experimental approach using Large Language Models (LLMs) for text extraction 
 
 **Decision**: Abandoned LLM approach in favour of deterministic regex pattern matching.
 
-### 5.7 Synthetic Data Consideration
+### 5.7 Synthetic Data and Custom OCR Consideration
 
-Initial plans included creating synthetic training data for a custom OCR model, following approaches demonstrated effective in scene text recognition (Gupta et al., 2016):
+Initial plans included creating **synthetic training data** for a custom OCR model, following approaches that have been effective in scene text recognition (Gupta et al., 2016):
 
 **Approach Considered**:
-- Generate synthetic serial plate images with known ground truth
-- Train custom OCR model specifically for serial number formats
+- Generate synthetic serial plate images (e.g. with scripted text and fonts) with known ground truth.
+- Train or fine-tune a **custom OCR model** (e.g. CRNN- or Transformer-based) specifically for serial number formats.
 
-**Advice from Industry Mentor**:
-- Pre-trained models (Apple Vision) would likely outperform models trained on synthetic data
-- Serial plates exhibit significant variation (wear, lighting, engraving depth) difficult to simulate realistically (Zhang et al., 2020)
-- Data sensitivity prevented creating comprehensive real datasets
+**Constraints and Advice** (industry mentor and literature):
+- **Pre-trained models** (e.g. Apple Vision) often generalise well and may outperform models trained only on synthetic data when real-world variation is high (Pan & Yang, 2010).
+- Serial plates exhibit **significant domain variation** (wear, lighting, engraving depth, surface finish) that is difficult to simulate realistically; synthetic data may not cover the long tail of failure cases (Zhang et al., 2020).
+- **Data sensitivity** (real serial numbers and part numbers) prevented building a large, shareable real dataset for training.
 
-**Decision**: Used pre-trained Apple Vision OCR instead of custom-trained model, leveraging transfer learning principles (Pan & Yang, 2010).
+**Decision**: Use **pre-trained Apple Vision OCR** rather than a custom-trained model, explicitly **leveraging transfer learning** from large-scale text recognition to the industrial nameplate setting with no additional training (Pan & Yang, 2010; Apple Inc., 2023). This choice also avoided the engineering and validation burden of deploying a custom OCR model on iOS.
 
 ---
 
@@ -1399,9 +1420,9 @@ This capstone project successfully delivered an automated serial number detectio
 
 ### 13.3 Final Statement
 
-This project demonstrates that with appropriate technology selection and iterative refinement, significant automation of manual processes is achievable even with limited training data. The iOS application provides a strong foundation for future integration into Aicadium's product ecosystem, potentially saving hundreds of hours annually in manual transcription while reducing human error.
+This project demonstrates that **AI and computer vision**—applied through a modular pipeline of deep learning-based detection, neural OCR, and rule-based field extraction—can achieve significant automation of manual transcription even under **data and deployment constraints** (Pan & Yang, 2010; Chen et al., 2021; Zhang et al., 2020). The iOS application provides a strong foundation for future integration into Aicadium's product ecosystem, potentially saving hundreds of hours annually in manual transcription while reducing human error and supporting compliance in regulated aviation workflows.
 
-The journey from Python prototype to native iOS application exemplifies adaptive problem-solving—pivoting approaches when initial solutions proved insufficient, and ultimately delivering a system that meets both academic rigour and industry needs.
+The journey from Python prototype to native iOS application exemplifies **adaptive, experiment-driven development** in applied AI: pivoting when initial solutions proved insufficient, leveraging transfer learning and pre-trained models where custom data were limited, and ultimately delivering a system that meets both academic rigour and industry needs while remaining interpretable and maintainable.
 
 ---
 
